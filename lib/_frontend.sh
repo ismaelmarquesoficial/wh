@@ -14,9 +14,9 @@ frontend_node_dependencies() {
 
   sleep 2
 
-  sudo su - deployzdg <<EOF
-  cd /home/deployzdg/whaticket/frontend
-  npm install
+  sudo su - deploybrandx <<EOF
+  cd /home/deploybrandx/${instancia_add}/frontend
+  npm install --force
 EOF
 
   sleep 2
@@ -34,9 +34,8 @@ frontend_node_build() {
 
   sleep 2
 
-  sudo su - deployzdg <<EOF
-  cd /home/deployzdg/whaticket/frontend
-  export NODE_OPTIONS=--openssl-legacy-provider
+  sudo su - deploybrandx <<EOF
+  cd /home/deploybrandx/${instancia_add}/frontend
   npm run build
 EOF
 
@@ -55,15 +54,16 @@ frontend_update() {
 
   sleep 2
 
-  sudo su - deployzdg <<EOF
-  cd /home/deployzdg/whaticket
+  sudo su - deploybrandx <<EOF
+  cd /home/deploybrandx/${empresa_atualizar}
+  pm2 stop ${empresa_atualizar}-frontend
   git pull
-  cd /home/deployzdg/whaticket/frontend
+  cd /home/deploybrandx/${empresa_atualizar}/frontend
   npm install
   rm -rf build
-  export NODE_OPTIONS=--openssl-legacy-provider
   npm run build
-  pm2 restart all
+  pm2 start ${empresa_atualizar}-frontend
+  pm2 save
 EOF
 
   sleep 2
@@ -87,11 +87,27 @@ frontend_set_env() {
   backend_url=${backend_url%%/*}
   backend_url=https://$backend_url
 
-sudo su - deployzdg << EOF
-  cat <<[-]EOF > /home/deployzdg/whaticket/frontend/.env
+sudo su - deploybrandx << EOF
+  cat <<[-]EOF > /home/deploybrandx/${instancia_add}/frontend/.env
 REACT_APP_BACKEND_URL=${backend_url}
 REACT_APP_HOURS_CLOSE_TICKETS_AUTO = 24
-REACT_APP_TITLE = "Comunidade ZDG"
+[-]EOF
+EOF
+
+  sleep 2
+
+sudo su - deploybrandx << EOF
+  cat <<[-]EOF > /home/deploybrandx/${instancia_add}/frontend/server.js
+//simple express server to run frontend production build;
+const express = require("express");
+const path = require("path");
+const app = express();
+app.use(express.static(path.join(__dirname, "build")));
+app.get("/*", function (req, res) {
+	res.sendFile(path.join(__dirname, "build", "index.html"));
+});
+app.listen(${frontend_port});
+
 [-]EOF
 EOF
 
@@ -110,12 +126,18 @@ frontend_start_pm2() {
 
   sleep 2
 
-  sudo su - deployzdg <<EOF
-  cd /home/deployzdg/whaticket/frontend
-  pm2 start server.js --name whaticket-frontend
-  pm2 save
+  sudo su - root <<EOF
+  cd /home/deploybrandx/${instancia_add}/frontend
+  pm2 start server.js --name ${instancia_add}-frontend
+  pm2 save --force
 EOF
 
+ sleep 2
+  
+  sudo su - root <<EOF
+   pm2 startup
+  sudo env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u deploybrandx --hp /home/deploybrandx
+EOF
   sleep 2
 }
 
@@ -135,12 +157,12 @@ frontend_nginx_setup() {
 
 sudo su - root << EOF
 
-cat > /etc/nginx/sites-available/whaticket-frontend << 'END'
+cat > /etc/nginx/sites-available/${instancia_add}-frontend << 'END'
 server {
   server_name $frontend_hostname;
 
   location / {
-    proxy_pass http://127.0.0.1:3333;
+    proxy_pass http://127.0.0.1:${frontend_port};
     proxy_http_version 1.1;
     proxy_set_header Upgrade \$http_upgrade;
     proxy_set_header Connection 'upgrade';
@@ -153,7 +175,7 @@ server {
 }
 END
 
-ln -s /etc/nginx/sites-available/whaticket-frontend /etc/nginx/sites-enabled
+ln -s /etc/nginx/sites-available/${instancia_add}-frontend /etc/nginx/sites-enabled
 EOF
 
   sleep 2

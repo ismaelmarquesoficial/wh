@@ -38,17 +38,9 @@ inquiry_options
 
 # dependencies related
 system_update
-system_apache_install
-system_apache_set_port
-system_apache_restart
-system_php_install
-system_php_set_mod
 system_node_install
-system_set_timezone
-system_set_ufw
 system_pm2_install
-system_mysql_install
-system_puppeteer_dependencies
+system_docker_install
 system_snapd_install
 system_nginx_install
 system_certbot_install
@@ -57,11 +49,13 @@ system_certbot_install
 system_create_user
 
 # backend related
+system_create_folder
+system_mv_folder
 system_unzip_whaticket
-backend_chrome_install
 backend_set_env
-backend_mysql_create
+backend_redis_create
 backend_node_dependencies
+# backend_node_build
 backend_db_migrate
 backend_db_seed
 backend_start_pm2
@@ -78,4 +72,3 @@ frontend_nginx_setup
 system_nginx_conf
 system_nginx_restart
 system_certbot_setup
-system_success
