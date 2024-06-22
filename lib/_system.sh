@@ -9,54 +9,15 @@
 #######################################
 system_create_user() {
   print_banner
-  printf "${WHITE} 💻 Agora, vamos criar o usuário para a instancia...${GRAY_LIGHT}"
+  printf "${WHITE} 💻 Agora, vamos criar o usuário para deployzdg...${GRAY_LIGHT}"
   printf "\n\n"
 
   sleep 2
 
   sudo su - root <<EOF
-  useradd -m -p $(openssl passwd -crypt ${deploy_password}) -s /bin/bash -G sudo deploybrandx
-  usermod -aG sudo deploybrandx
-EOF
-
-  sleep 2
-}
-
-#######################################
-# clones repostories using git
-# Arguments:
-#   None
-#######################################
-system_mv_folder() {
-  print_banner
-  printf "${WHITE} 💻 Fazendo download do código Whaticket...${GRAY_LIGHT}"
-  printf "\n\n"
-
-
-  sleep 2
-
-  sudo su - root <<EOF
-  cp "${PROJECT_ROOT}"/whaticket.zip /home/deploybrandx/${instancia_add}/
-EOF
-  # git clone ${link_git} /home/deploybrandx/${instancia_add}/
-
-  sleep 2
-}
-
-#######################################
-# creates folder
-# Arguments:
-#   None
-#######################################
-system_create_folder() {
-  print_banner
-  printf "${WHITE} 💻 Agora, vamos criar a nova pasta...${GRAY_LIGHT}"
-  printf "\n\n"
-
-  sleep 2
-
-  sudo su - deploybrandx <<EOF 
-  mkdir ${instancia_add}
+  useradd -m -p $(openssl passwd $deploy_password) -s /bin/bash -G sudo deployzdg
+  usermod -aG sudo deployzdg
+  mv "${PROJECT_ROOT}"/whaticket.zip /home/deployzdg/
 EOF
 
   sleep 2
@@ -74,11 +35,11 @@ system_unzip_whaticket() {
 
   sleep 2
 
-  sudo su - deploybrandx <<EOF
-  unzip /home/deploybrandx/${instancia_add}/whaticket.zip -d /home/deploybrandx/${instancia_add}
+  sudo su - deployzdg <<EOF
+  unzip whaticket.zip
 EOF
 
-  sleep
+  sleep 2
 }
 
 #######################################
@@ -88,221 +49,14 @@ EOF
 #######################################
 system_update() {
   print_banner
-  printf "${WHITE} 💻 Vamos atualizar o sistema Whaticket...${GRAY_LIGHT}"
+  printf "${WHITE} 💻 Vamos atualizar o sistema...${GRAY_LIGHT}"
   printf "\n\n"
 
   sleep 2
 
   sudo su - root <<EOF
-  apt -y update
-  sudo apt-get install -y libxshmfence-dev libgbm-dev wget unzip fontconfig locales gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils
+  apt -y update && apt -y upgrade
 EOF
-
-  sleep 2
-}
-
-
-
-#######################################
-# delete system
-# Arguments:
-#   None
-#######################################
-deletar_tudo() {
-  print_banner
-  printf "${WHITE} 💻 Vamos deletar o Whaticket...${GRAY_LIGHT}"
-  printf "\n\n"
-
-  sleep 2
-
-  sudo su - root <<EOF
-  docker container rm redis-${empresa_delete} --force
-  cd && rm -rf /etc/nginx/sites-enabled/${empresa_delete}-frontend
-  cd && rm -rf /etc/nginx/sites-enabled/${empresa_delete}-backend  
-  cd && rm -rf /etc/nginx/sites-available/${empresa_delete}-frontend
-  cd && rm -rf /etc/nginx/sites-available/${empresa_delete}-backend
-  
-  sleep 2
-
-  sudo su - postgres
-  dropuser ${empresa_delete}
-  dropdb ${empresa_delete}
-  exit
-EOF
-
-sleep 2
-
-sudo su - deploybrandx <<EOF
- rm -rf /home/deploybrandx/${empresa_delete}
- pm2 delete ${empresa_delete}-frontend ${empresa_delete}-backend
- pm2 save
-EOF
-
-  sleep 2
-
-  print_banner
-  printf "${WHITE} 💻 Remoção da Instancia/Empresa ${empresa_delete} realizado com sucesso ...${GRAY_LIGHT}"
-  printf "\n\n"
-
-
-  sleep 2
-
-}
-
-#######################################
-# bloquear system
-# Arguments:
-#   None
-#######################################
-configurar_bloqueio() {
-  print_banner
-  printf "${WHITE} 💻 Vamos bloquear o Whaticket...${GRAY_LIGHT}"
-  printf "\n\n"
-
-  sleep 2
-
-sudo su - deploybrandx <<EOF
- pm2 stop ${empresa_bloquear}-backend
- pm2 save
-EOF
-
-  sleep 2
-
-  print_banner
-  printf "${WHITE} 💻 Bloqueio da Instancia/Empresa ${empresa_bloquear} realizado com sucesso ...${GRAY_LIGHT}"
-  printf "\n\n"
-
-  sleep 2
-}
-
-
-#######################################
-# desbloquear system
-# Arguments:
-#   None
-#######################################
-configurar_desbloqueio() {
-  print_banner
-  printf "${WHITE} 💻 Vamos Desbloquear o Whaticket...${GRAY_LIGHT}"
-  printf "\n\n"
-
-  sleep 2
-
-sudo su - deploybrandx <<EOF
- pm2 start ${empresa_bloquear}-backend
- pm2 save
-EOF
-
-  sleep 2
-
-  print_banner
-  printf "${WHITE} 💻 Desbloqueio da Instancia/Empresa ${empresa_desbloquear} realizado com sucesso ...${GRAY_LIGHT}"
-  printf "\n\n"
-
-  sleep 2
-}
-
-#######################################
-# alter dominio system
-# Arguments:
-#   None
-#######################################
-configurar_dominio() {
-  print_banner
-  printf "${WHITE} 💻 Vamos Alterar os Dominios do Whaticket...${GRAY_LIGHT}"
-  printf "\n\n"
-
-sleep 2
-
-  sudo su - root <<EOF
-  cd && rm -rf /etc/nginx/sites-enabled/${empresa_dominio}-frontend
-  cd && rm -rf /etc/nginx/sites-enabled/${empresa_dominio}-backend  
-  cd && rm -rf /etc/nginx/sites-available/${empresa_dominio}-frontend
-  cd && rm -rf /etc/nginx/sites-available/${empresa_dominio}-backend
-EOF
-
-sleep 2
-
-  sudo su - deploybrandx <<EOF
-  cd && cd /home/deploybrandx/${empresa_dominio}/frontend
-  sed -i "1c\REACT_APP_BACKEND_URL=https://${alter_backend_url}" .env
-  cd && cd /home/deploybrandx/${empresa_dominio}/backend
-  sed -i "2c\BACKEND_URL=https://${alter_backend_url}" .env
-  sed -i "3c\FRONTEND_URL=https://${alter_frontend_url}" .env 
-EOF
-
-sleep 2
-   
-   backend_hostname=$(echo "${alter_backend_url/https:\/\/}")
-
- sudo su - root <<EOF
-  cat > /etc/nginx/sites-available/${empresa_dominio}-backend << 'END'
-server {
-  server_name $backend_hostname;
-  location / {
-    proxy_pass http://127.0.0.1:${alter_backend_port};
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade \$http_upgrade;
-    proxy_set_header Connection 'upgrade';
-    proxy_set_header Host \$host;
-    proxy_set_header X-Real-IP \$remote_addr;
-    proxy_set_header X-Forwarded-Proto \$scheme;
-    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-    proxy_cache_bypass \$http_upgrade;
-  }
-}
-END
-ln -s /etc/nginx/sites-available/${empresa_dominio}-backend /etc/nginx/sites-enabled
-EOF
-
-sleep 2
-
-frontend_hostname=$(echo "${alter_frontend_url/https:\/\/}")
-
-sudo su - root << EOF
-cat > /etc/nginx/sites-available/${empresa_dominio}-frontend << 'END'
-server {
-  server_name $frontend_hostname;
-  location / {
-    proxy_pass http://127.0.0.1:${alter_frontend_port};
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade \$http_upgrade;
-    proxy_set_header Connection 'upgrade';
-    proxy_set_header Host \$host;
-    proxy_set_header X-Real-IP \$remote_addr;
-    proxy_set_header X-Forwarded-Proto \$scheme;
-    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-    proxy_cache_bypass \$http_upgrade;
-  }
-}
-END
-ln -s /etc/nginx/sites-available/${empresa_dominio}-frontend /etc/nginx/sites-enabled
-EOF
-
- sleep 2
-
- sudo su - root <<EOF
-  service nginx restart
-EOF
-
-  sleep 2
-
-  backend_domain=$(echo "${backend_url/https:\/\/}")
-  frontend_domain=$(echo "${frontend_url/https:\/\/}")
-
-  sudo su - root <<EOF
-  certbot -m $deploy_email \
-          --nginx \
-          --agree-tos \
-          --non-interactive \
-          --domains $backend_domain,$frontend_domain
-EOF
-
-  sleep 2
-
-  print_banner
-  printf "${WHITE} 💻 Alteração de dominio da Instancia/Empresa ${empresa_dominio} realizado com sucesso ...${GRAY_LIGHT}"
-  printf "\n\n"
 
   sleep 2
 }
@@ -314,49 +68,33 @@ EOF
 #######################################
 system_node_install() {
   print_banner
-  printf "${WHITE} 💻 Instalando node.js...${GRAY_LIGHT}"
+  printf "${WHITE} 💻 Instalando nodejs...${GRAY_LIGHT}"
   printf "\n\n"
 
   sleep 2
 
   sudo su - root <<EOF
-  curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
   apt-get install -y nodejs
-  sleep 2
-  npm install -g npm@latest
-  sleep 2
-  sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-  wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-  sudo apt-get update -y && sudo apt-get -y install postgresql
-  sleep 2
-  sudo timedatectl set-timezone America/Sao_Paulo
-  
 EOF
 
   sleep 2
 }
+
 #######################################
-# installs docker
+# installs mysql
 # Arguments:
 #   None
 #######################################
-system_docker_install() {
+system_mysql_install() {
   print_banner
-  printf "${WHITE} 💻 Instalando redis...${GRAY_LIGHT}"
+  printf "${WHITE} 💻 Instalando mysql...${GRAY_LIGHT}"
   printf "\n\n"
 
   sleep 2
 
   sudo su - root <<EOF
-  apt install -y apt-transport-https \
-                 ca-certificates curl \
-                 software-properties-common
-
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-  
-  add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
-
-  apt install -y docker-ce
+  apt install -y mysql-server
 EOF
 
   sleep 2
@@ -423,7 +161,9 @@ system_puppeteer_dependencies() {
                       libappindicator1 \
                       libnss3 \
                       lsb-release \
-                      xdg-utils
+                      xdg-utils \
+                      ffmpeg \
+					  git
 EOF
 
   sleep 2
@@ -443,7 +183,46 @@ system_pm2_install() {
 
   sudo su - root <<EOF
   npm install -g pm2
+  pm2 startup ubuntu -u deployzdg
+  env PATH=\$PATH:/usr/bin pm2 startup ubuntu -u deployzdg --hp /home/deployzdg
+EOF
 
+  sleep 2
+}
+
+#######################################
+# set timezone
+# Arguments:
+#   None
+#######################################
+system_set_timezone() {
+  print_banner
+  printf "${WHITE} 💻 Instalando pm2...${GRAY_LIGHT}"
+  printf "\n\n"
+
+  sleep 2
+
+  sudo su - root <<EOF
+  timedatectl set-timezone America/Sao_Paulo
+EOF
+
+  sleep 2
+}
+
+#######################################
+# set ufw
+# Arguments:
+#   None
+#######################################
+system_set_ufw() {
+  print_banner
+  printf "${WHITE} 💻 Instalando pm2...${GRAY_LIGHT}"
+  printf "\n\n"
+
+  sleep 2
+
+  sudo su - root <<EOF
+  ufw allow 80/tcp && ufw allow 22/tcp && ufw allow 443/tcp && ufw allow 8080/tcp && ufw allow 8081/tcp && ufw allow 3000/tcp && ufw allow 3333/tcp && ufw allow 3003/tcp
 EOF
 
   sleep 2
@@ -544,8 +323,8 @@ system_nginx_conf() {
 
 sudo su - root << EOF
 
-cat > /etc/nginx/conf.d/deploybrandx.conf << 'END'
-client_max_body_size 100M;
+cat > /etc/nginx/conf.d/whaticket.conf << 'END'
+client_max_body_size 20M;
 END
 
 EOF
@@ -574,8 +353,165 @@ system_certbot_setup() {
           --agree-tos \
           --non-interactive \
           --domains $backend_domain,$frontend_domain
-
 EOF
+
+  sleep 2
+}
+
+#######################################
+# installs apache
+# Arguments:
+#   None
+#######################################
+system_apache_install() {
+  print_banner
+  printf "${WHITE} 💻 Instalando apache...${GRAY_LIGHT}"
+  printf "\n\n"
+
+  sleep 2
+
+  sudo su - root <<EOF
+  sudo apt-get install -y apache2 \
+                            apache2-utils
+EOF
+
+  sleep 2
+}
+
+#######################################
+# set port apache
+# Arguments:
+#   None
+#######################################
+system_apache_set_port() {
+  print_banner
+  printf "${WHITE} 💻 Setando porta do apache...${GRAY_LIGHT}"
+  printf "\n\n"
+
+  sleep 2
+
+  sudo su - root << EOF
+    cat <<[-]EOF > /etc/apache2/ports.conf
+# If you just change the port or add more ports here, you will likely also
+# have to change the VirtualHost statement in
+# /etc/apache2/sites-enabled/000-default.conf
+
+Listen 81
+
+<IfModule ssl_module>
+  Listen 443
+</IfModule>
+
+<IfModule mod_gnutls.c>
+  Listen 443
+</IfModule>
+
+# vim: syntax=apache ts=4 sw=4 sts=4 sr noet
+[-]EOF
+EOF
+
+  sleep 2
+}
+
+#######################################
+# restart apache
+# Arguments:
+#   None
+#######################################
+system_apache_restart() {
+  print_banner
+  printf "${WHITE} 💻 Restart apache...${GRAY_LIGHT}"
+  printf "\n\n"
+
+  sleep 2
+
+  sudo su - root <<EOF
+  systemctl restart apache2
+  systemctl enable apache2
+EOF
+
+  sleep 2
+}
+
+#######################################
+# install php
+# Arguments:
+#   None
+#######################################
+system_php_install() {
+  print_banner
+  printf "${WHITE} 💻 Instalando php...${GRAY_LIGHT}"
+  printf "\n\n"
+
+  sleep 2
+
+  sudo su - root <<EOF
+  apt-get install -y php7.4 \
+                  libapache2-mod-php7.4 \
+                  php7.4-mysql \
+                  php-common \
+                  php7.4-cli \
+                  php7.4-common \
+                  php7.4-json \
+                  php7.4-opcache \
+                  php7.4-readline
+  apt-get install -y php-curl
+EOF
+
+  sleep 2
+}
+
+#######################################
+# set mod php
+# Arguments:
+#   None
+#######################################
+system_php_set_mod() {
+  print_banner
+  printf "${WHITE} 💻 Setando mod PHP...${GRAY_LIGHT}"
+  printf "\n\n"
+
+  sleep 2
+
+  sudo su - root <<EOF
+  a2enmod php7.4
+  systemctl restart apache2
+  a2dismod php7.4
+  apt-get install -y php7.4-fpm
+  a2enmod proxy_fcgi setenvif
+  a2enconf php7.4-fpm
+  systemctl restart apache2
+EOF
+
+  sleep 2
+}
+
+#######################################
+# creates final message
+# Arguments:
+#   None
+#######################################
+system_success() {
+  print_banner
+  printf "${GREEN} 💻 Instalação concluída com Sucesso...${NC}"
+  printf "${CYAN_LIGHT}";
+  printf "\n\n"
+  printf "Usuário: admin@whaticket.com"
+  printf "\n"
+  printf "Senha: admin"
+  printf "\n"
+  printf "URL front: https://$frontend_url"
+  printf "\n"
+  printf "URL back: https://$backend_url"
+  printf "\n"
+  printf "Senha Usuario DeployZDG: $deploy_password"
+  printf "\n"
+  printf "Usuario do Banco de Dados: $db_user"
+  printf "\n"
+  printf "Nome do Banco de Dados: $db_name"
+  printf "\n"
+  printf "Senha do Banco de Dados: $db_pass"
+  printf "\n"
 
   sleep 2
 }
